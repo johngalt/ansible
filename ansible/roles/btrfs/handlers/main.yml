@@ -1,0 +1,5 @@
+---
+- name: Cleanup btrfs download directory
+  ansible.builtin.file:
+    path: "/tmp/btrfs-progs-{{ btrfs_version }}"
+    state: absent

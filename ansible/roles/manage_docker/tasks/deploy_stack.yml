@@ -1,0 +1,6 @@
+---
+- name: Deploy stack {{ deploy_stack_name }}
+  community.docker.docker_compose_v2:
+    project_src: "{{ manage_docker_config_dir }}/{{ deploy_stack_name }}/"
+    remove_orphans: true
+    state: present

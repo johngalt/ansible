@@ -1,0 +1,68 @@
+---
+- name: Create renovate config directory
+  ansible.builtin.file:
+    dest: "{{ renovate_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy renovate config file
+  ansible.builtin.template:
+    dest: "{{ renovate_directory }}/config.js"
+    src: renovate.j2
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create renovate run script
+  ansible.builtin.copy:
+    content: |
+      #!/bin/bash
+      export GITHUB_COM_TOKEN={{ renovate_github_key }}
+      export RENOVATE_TOKEN={{ renovate_pat_key }}
+      docker run --rm -e RENOVATE_TOKEN -e GITHUB_COM_TOKEN \
+      -v {{ renovate_directory }}/config.js:/usr/src/app/config.js \
+      ghcr.io/renovatebot/renovate:{{ renovate_version }}
+    dest: /opt/renovate/run.sh
+    owner: root
+    group: root
+    mode: '0744'
+
+- name: Create renovate service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/renovate.service
+    content: |
+      [Unit]
+      Description=Executor for renovate
+      Requires=docker.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/opt/renovate/run.sh
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Enable renovate timer
+
+- name: Create renovate timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/renovate.timer
+    content: |
+      [Unit]
+      Description=Run renovate every 2 hours
+
+      [Timer]
+      OnCalendar={{ renovate_timer }}
+      RandomizedDelaySec=5m
+
+      [Install]
+      WantedBy=timers.target
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Enable renovate timer

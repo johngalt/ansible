@@ -1,0 +1,9 @@
+---
+# renovate: datasource=github-releases packageName=restic/restic versioning=semver
+backrest_restic_version: "0.17.3"
+# renovate: datasource=github-releases packageName=garethgeorge/backrest versioning=semver-coerced
+backrest_version: "1.7.2"
+
+backrest_host: "172.17.0.1"
+backrest_user: "root"
+backrest_port: "9898"

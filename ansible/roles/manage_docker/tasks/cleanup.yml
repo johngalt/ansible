@@ -1,0 +1,14 @@
+---
+- name: Prune old images/containers
+  community.docker.docker_prune:
+    containers: true
+    images: true
+  register: prune_output
+
+- name: Output prune log
+  ansible.builtin.debug:
+    msg:
+      - "Containers removed: {{ prune_output.containers | length }}"
+      - "Container space freed: {{ prune_output.containers_space_reclaimed | human_readable }}"
+      - "Images removed: {{ prune_output.images | length }}"
+      - "Image space freed: {{ prune_output.images_space_reclaimed | human_readable }}"

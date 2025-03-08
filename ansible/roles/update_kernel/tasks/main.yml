@@ -1,0 +1,43 @@
+---
+- name: Pin kernel version to apt preferences file
+  ansible.builtin.copy:
+    dest: "/etc/apt/preferences.d/99_kernel"
+    content: |
+      Package: /(linux-image-amd64|linux-headers)/
+      Pin: release a=stable-backports
+      Pin-Priority: 900
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install linux backports image through apt
+  ansible.builtin.apt:
+    name: "linux-image-amd64"
+    state: latest
+    only_upgrade: true
+  notify: Reboot
+
+- name: Install linux backports headers through apt
+  ansible.builtin.apt:
+    name: "linux-headers-amd64"
+    state: latest
+    only_upgrade: true
+  notify: Reboot
+
+- name: Flush handlers to force reboot if needed
+  ansible.builtin.meta: flush_handlers
+
+# - name: Get current linux kernel version (after reboot if necessary)
+#   ansible.builtin.command: "uname -r"
+#   register: _uname_output
+#   changed_when: false
+
+# - name: Check if current linux version matches desired version
+#   ansible.builtin.assert:
+#     that: "_uname_output.stdout.startswith(update_kernel_version)"
+#     success_msg: "Kernel version is set to desired version: {{ _uname_output.stdout }}"
+#     fail_msg: "Kernel version was NOT successfully set."

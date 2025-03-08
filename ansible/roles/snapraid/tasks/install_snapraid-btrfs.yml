@@ -1,0 +1,31 @@
+---
+- name: Clone snapraid-btrfs repository # noqa latest
+  ansible.builtin.git:
+    repo: https://github.com/automorphism88/snapraid-btrfs.git
+    dest: /tmp/snapraid-btrfs
+  register: _snapraid_btrfs_git
+  check_mode: false
+
+- name: Copy snapraid-btrfs script to /usr/local/bin # noqa no-handler
+  ansible.builtin.copy:
+    src: /tmp/snapraid-btrfs/snapraid-btrfs
+    dest: /usr/local/bin/snapraid-btrfs
+    mode: "0755"
+    remote_src: true
+  when: _snapraid_btrfs_git.changed
+
+- name: Ensure snapraid-btrfs is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/snapraid-btrfs
+    mode: "0755"
+
+# TODO: Remove this once the following PR is merged https://github.com/automorphism88/snapraid-btrfs/pull/34
+- name: Patch snapraid-btrfs # noqa no-handler
+  ansible.builtin.lineinfile:
+    path: /usr/local/bin/snapraid-btrfs
+    regexp: >-
+      ^(\s{8})sed -e '/\^SUBVOLUME /!d' -e 's/\^SUBVOLUME\[ ]\*\| //'\)\"$
+    line: >-
+      \1sed -e '/^SUBVOLUME /!d' -e 's/^SUBVOLUME[ ]*[|│] //')"
+    backrefs: true
+  when: _snapraid_btrfs_git.changed

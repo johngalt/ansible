@@ -1,0 +1,30 @@
+# SnapRAID Configuration
+{{ ansible_managed | comment }}
+
+# Parity Files
+{% for parity_file in snapraid_parity_files %}
+parity {{ parity_file }}
+{% endfor %}
+
+# Content Files
+{% for content_file in snapraid_content_files %}
+content {{ content_file }}
+{% endfor %}
+
+# Data Directories
+{% for data_dir in snapraid_data_dirs %}
+data d{{ loop.index }} {{ data_dir }}
+{% endfor %}
+
+# Excludes hidden files and directories
+nohidden
+
+# Defines files and directories to exclude
+exclude *.unrecoverable
+exclude /tmp/
+exclude /lost+found/
+exclude *.!sync
+exclude /.snapshots/
+
+# Automatically save the state when syncing after the specified amount of GB processed
+autosave 500

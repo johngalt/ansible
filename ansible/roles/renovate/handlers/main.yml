@@ -1,0 +1,10 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable renovate timer
+  ansible.builtin.systemd:
+    name: renovate.timer
+    state: started
+    enabled: true

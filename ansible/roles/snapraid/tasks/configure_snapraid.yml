@@ -1,0 +1,28 @@
+- name: Check directories for snapraid content and snapraid parity files
+  ansible.builtin.stat:
+    path: "{{ item | dirname }}"
+  loop: "{{ snapraid_content_files + snapraid_parity_files }}"
+  register: _dircheck
+
+- name: Check data directories
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ snapraid_data_dirs }}"
+  register: _datacheck
+
+- name: Ensure directories exist on host system
+  ansible.builtin.assert:
+    that: "item.stat.exists and item.stat.isdir"
+    fail_msg: "Defined directory {{ item.item }} does not exist"
+    quiet: true
+  loop: "{{ _dircheck.results + _datacheck.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Generate SnapRAID config file from template
+  ansible.builtin.template:
+    src: snapraid.j2
+    dest: "{{ snapraid_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"

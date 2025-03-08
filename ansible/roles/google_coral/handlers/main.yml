@@ -1,0 +1,10 @@
+---
+- name: Cleanup coral download directory
+  ansible.builtin.file:
+    path: "/tmp/google-coral"
+    state: absent
+
+- name: Reboot
+  ansible.builtin.reboot:
+    msg: "Reboot triggered by Ansible: google_coral"
+  when: google_coral_reboot is true

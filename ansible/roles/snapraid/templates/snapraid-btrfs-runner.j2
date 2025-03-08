@@ -1,0 +1,46 @@
+# snapraid-btrfs-runner configuration
+{{ ansible_managed | comment }}
+
+[snapraid-btrfs]
+executable = /usr/local/bin/snapraid-btrfs
+pool = false
+cleanup = true
+
+[snapper]
+executable = /usr/bin/snapper
+
+[snapraid]
+executable = /usr/local/bin/snapraid
+config = /etc/snapraid.conf
+deletethreshold = {{ snapraid_btrfs_runner_config.delete_threshold | lower }}
+touch = {{ snapraid_btrfs_runner_config.touch | lower }}
+
+[logging]
+file = {{ snapraid_btrfs_runner_config.log }}
+maxsize = 5000
+
+[email]
+; when to send an email, comma-separated list of [success, error]
+sendon = error
+; set to false to get full programm output via email
+short = true
+subject = [SnapRAID] Status Report:
+from = {{ snapraid_btrfs_runner_config.email_from }}
+to = {{ snapraid_btrfs_runner_config.email_to }}
+; maximum email size in KiB
+maxsize = 500
+
+[smtp]
+host = {{ snapraid_btrfs_runner_config.smtp_host }}
+; leave empty for default port
+port = 8025
+; set to "true" to activate
+ssl = false
+tls = false
+user =
+password =
+
+[scrub]
+enabled = {{ snapraid_btrfs_runner_config.scrub_enabled | lower }}
+plan = {{ snapraid_btrfs_runner_config.scrub_plan }}
+older-than = {{ snapraid_btrfs_runner_config.scrub_older_than }}

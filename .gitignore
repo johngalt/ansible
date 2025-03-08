@@ -1,0 +1,6 @@
+ansible/.venv/
+ansible/.vscode/
+ansible/.ansible/
+ansible/docker_vars/
+ansible/inventories/
+ansible/group_vars/all.yml

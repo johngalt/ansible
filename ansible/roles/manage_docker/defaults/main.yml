@@ -1,0 +1,23 @@
+---
+# Compose storage location (where git pulls repository on local controller)
+# Expected format: REPO/[HOSTNAME]/[STACKNAME].yaml
+manage_docker_compose_storage: "/home/ansible/compose-files"
+# Git repo address (use SSH)
+manage_docker_compose_repo: ""
+manage_docker_git_key: ""
+
+# Location of secrets file. Format expected:
+# stackname:
+#   variable1: info
+#   variable2: info
+manage_docker_secrets_file: "" # Vault encryped
+
+# Config directory - where stack folders are deployed
+manage_docker_config_dir: "/opt/docker"
+manage_docker_config_permissions: "0770"
+manage_docker_user: "docker"
+manage_docker_group: "docker"
+
+# List of networks to create if not created
+manage_docker_networks:
+  - name: dockernet

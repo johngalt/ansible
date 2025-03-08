@@ -1,0 +1,44 @@
+---
+- name: Set stack name variable
+  ansible.builtin.set_fact:
+    docker_compose_stack_name: "{{ docker_compose_stack_file.path | basename | splitext | first }}"
+
+- name: Create stack directory for {{ docker_compose_stack_name }}
+  ansible.builtin.file:
+    path: "{{ manage_docker_config_dir }}/{{ docker_compose_stack_name }}/"
+    state: directory
+    owner: "{{ manage_docker_user | default('root', true) }}"
+    group: "{{ manage_docker_group | default('root', true) }}"
+    mode: "{{ manage_docker_config_permissions }}"
+
+- name: Copy stack compose file from repository for {{ docker_compose_stack_name }}
+  ansible.builtin.copy:
+    src: "{{ docker_compose_stack_file.path }}"
+    dest: "{{ manage_docker_config_dir }}/{{ docker_compose_stack_name }}/docker-compose.yaml"
+    owner: "{{ manage_docker_user | default('root') }}"
+    group: "{{ manage_docker_group | default('root') }}"
+    mode: "0664"
+  register: stack_file_changed
+
+- name: Check if stack has secrets defined in file
+  ansible.builtin.set_fact:
+    secrets_present: "{{ true if docker_compose_stack_name in secrets_file.keys() else false }}"
+
+- name: Get stack secrets
+  ansible.builtin.set_fact:
+    stack_secrets: "{{ secrets_file[docker_compose_stack_name] }}"
+  when: secrets_present
+
+- name: Generate env file from template for {{ docker_compose_stack_name }}
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ manage_docker_config_dir }}/{{ docker_compose_stack_name }}/.env"
+    owner: "{{ manage_docker_user | default('root', true) }}"
+    group: "{{ manage_docker_group | default('root', true) }}"
+    mode: "0600"
+  register: stack_env_changed
+
+- name: Register list of changed stacks to deploy # noqa: no-handler
+  ansible.builtin.set_fact:
+    deploy_stacks: "{{ deploy_stacks | default([]) + [docker_compose_stack_name] }}"
+  when: stack_file_changed.changed or stack_env_changed.changed

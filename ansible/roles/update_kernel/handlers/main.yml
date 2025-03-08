@@ -1,0 +1,5 @@
+---
+- name: Reboot
+  ansible.builtin.reboot:
+    msg: "Reboot triggered by Ansible: update_kernel task"
+  when: update_kernel_reboot is true

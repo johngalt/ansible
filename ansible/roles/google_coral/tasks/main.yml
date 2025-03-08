@@ -1,0 +1,75 @@
+---
+- name: Install Google Cloud SDK signing key
+  ansible.builtin.get_url:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    dest: /etc/apt/keyrings/gcloud.asc
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add Coral EdgeTPU repository
+  ansible.builtin.deb822_repository:
+    name: coral-edgetpu
+    types: deb
+    uris: https://packages.cloud.google.com/apt
+    suites: coral-edgetpu-stable
+    components:
+      - main
+    signed_by: /etc/apt/keyrings/gcloud.asc
+
+- name: Install dependencies for gasket-dkms module
+  ansible.builtin.apt:
+    name: ['dkms', 'linux-headers-amd64']
+    state: present
+    update_cache: true
+
+- name: Get current installed kernel
+  ansible.builtin.command: "uname -r"
+  register: _current_kernel
+  changed_when: false
+
+- name: Register package facts
+  ansible.builtin.package_facts:
+
+- name: Check if gasket-dkms module is already installed
+  ansible.builtin.set_fact:
+    gasket_installed: true
+  when: "'gasket-dkms' in ansible_facts.packages"
+
+- name: Install packages if gasket-dkms not installed
+  when: gasket_installed is undefined
+  block:
+    - name: Install Coral EdgeTPU through Google repo for kernel < 6.12
+      ansible.builtin.include_tasks:
+        file: stable.yml
+      when: _current_kernel.stdout is version('6.12', '<')
+    # Gasket-dkms module on the Google repository is broken for linux kernels < 6.12
+    # Must get deb file from custom build that includes fixed pull requests
+    # Can remove this once the repo maintainer merges the pull request
+    # Commit: https://github.com/google/gasket-driver/commit/4b2a1464f3b619daaf0f6c664c954a42c4b7ce00
+    # PR: https://github.com/google/gasket-driver/pull/35
+    - name: Install Coral EdgeTPU through custom deb build for kernel >= 6.12
+      ansible.builtin.include_tasks:
+        file: manual.yml
+      when: _current_kernel.stdout is version('6.12', '>=')
+
+- name: Add udev rule for Apex
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/65-apex.rules
+    line: 'SUBSYSTEM=="apex", MODE="0660", GROUP="apex"'
+    mode: '664'
+    create: true
+
+- name: Create apex group
+  ansible.builtin.group:
+    name: apex
+    state: present
+
+- name: Add specified user to apex group
+  ansible.builtin.user:
+    name: "{{ google_coral_user }}"
+    groups: apex
+    append: true
+
+- name: Flush handlers to trigger reboot if needed
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,73 @@
+---
+- name: Get current btrfs version if installed
+  ansible.builtin.command: btrfs --version
+  register: _btrfs_version_output
+  changed_when: false
+  ignore_errors: true
+  check_mode: false
+
+- name: Set current btrfs version variable
+  ansible.builtin.set_fact:
+    btrfs_installed_version: "{{ _btrfs_version_output.stdout.split()[1] | regex_replace('^v', '') }}"
+  when: _btrfs_version_output.rc == 0
+
+- name: Mark btrfs for install if not installed
+  ansible.builtin.set_fact:
+    btrfs_update_needed: true
+  when: _btrfs_version_output.rc != 0
+
+- name: Mark btrfs for update if newer version is set
+  ansible.builtin.set_fact:
+    btrfs_update_needed: true
+  when: btrfs_version is version(btrfs_installed_version|default("0"), '>')
+
+- name: Install/update btrfs-progs from source
+  when: btrfs_update_needed is defined
+  notify: Cleanup btrfs download directory
+  block:
+    - name: Install dependencies
+      ansible.builtin.apt:
+        name:
+          - build-essential
+          - autoconf
+          - automake
+          - e2fslibs-dev
+          - git
+          - libacl1-dev
+          - libattr1-dev
+          - libblkid-dev
+          - liblzo2-dev
+          - libudev-dev
+          - libzstd-dev
+          - pkg-config
+          - uuid-dev
+          - zlib1g-dev
+          - python3-setuptools
+          - python3-dev
+        state: present
+        update_cache: true
+    - name: Get release from GitHub
+      ansible.builtin.unarchive:
+        src: "https://github.com/kdave/btrfs-progs/archive/refs/tags/v{{ btrfs_version }}.tar.gz"
+        dest: /tmp/
+        remote_src: true
+    - name: Autogen btrfs-progs
+      ansible.builtin.command:
+        cmd: ./autogen.sh
+        chdir: "/tmp/btrfs-progs-{{ btrfs_version }}"
+      changed_when: true
+    - name: Configure btrfs-progs
+      ansible.builtin.command:
+        cmd: ./configure --disable-documentation
+        chdir: "/tmp/btrfs-progs-{{ btrfs_version }}"
+      changed_when: true
+    - name: Make btrfs-progs
+      ansible.builtin.command:
+        cmd: make
+        chdir: "/tmp/btrfs-progs-{{ btrfs_version }}"
+      changed_when: true
+    - name: Make install btrfs-progs
+      ansible.builtin.command:
+        cmd: make install
+        chdir: "/tmp/btrfs-progs-{{ btrfs_version }}"
+      changed_when: true

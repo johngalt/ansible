@@ -1,0 +1,14 @@
+---
+# renovate: datasource=github-releases packageName=renovatebot/renovate versioning=semver
+renovate_version: "39.191.1"
+renovate_directory: "/opt/renovate"
+renovate_timer: "*-*-* 00/2:00:00"
+
+# Renovate bot configuration
+renovate_endpoint: "https://gitea.DOMAIN.TLD/api/v1"
+renovate_gitauthor: "Renovate Bot <renovate-bot@DOMAIN.TLD>"
+renovate_platform: "gitea"
+
+# Github key for changelogs, PAT key for gitea instance
+renovate_github_key: ""
+renovate_pat_key: ""

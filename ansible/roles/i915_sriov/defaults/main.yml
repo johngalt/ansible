@@ -1,0 +1,4 @@
+---
+# renovate: datasource=github-releases packageName=strongtz/i915-sriov-dkms versioning=loose
+i915_sriov_version: "2025.02.03"
+i915_sriov_reboot: true

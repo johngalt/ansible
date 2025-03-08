@@ -1,0 +1,8 @@
+---
+- name: Docker deployment
+  hosts: dockergroup
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: manage_docker

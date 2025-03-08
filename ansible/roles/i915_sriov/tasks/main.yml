@@ -1,0 +1,39 @@
+---
+- name: Get current installed kernel version
+  ansible.builtin.command: "uname -r"
+  register: _current_kernel
+  changed_when: false
+  check_mode: false
+
+- name: Ensure that current kernel version is compatible with i915-sriov dkms module
+  ansible.builtin.assert:
+    that: "_current_kernel.stdout is version('6.8', '>=')"
+    fail_msg: "Current kernel {{ _current_kernel.stdout }} is not supported by current i915 dkms module"
+    quiet: true
+
+- name: Register package facts
+  ansible.builtin.package_facts:
+
+- name: Check if i915-sriov dkms module is already installed
+  ansible.builtin.set_fact:
+    i915_installed: true
+  when: "'i915-sriov-dkms' in ansible_facts.packages"
+
+- name: Check to see if upgrade is needed for i915-sriov dkms module
+  when: i915_installed is defined
+  block:
+    - name: Get current version of module
+      ansible.builtin.set_fact:
+        i915_installed_version: "{{ ansible_facts.packages['i915-sriov-dkms'][0]['version'] }}"
+
+    - name: Determine if upgrade is needed
+      ansible.builtin.set_fact:
+        i915_upgrade_needed: "{{ true if i915_sriov_version is version(i915_installed_version, '>') else false }}"
+
+- name: Install i915-sriov-dkms module
+  ansible.builtin.include_tasks:
+    file: install.yml
+  when: i915_installed|default(false) is false or i915_upgrade_needed is true
+
+- name: Flush handlers if grub update or reboot needed
+  ansible.builtin.meta: flush_handlers

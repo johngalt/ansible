@@ -1,0 +1,57 @@
+---
+- name: Get package facts
+  ansible.builtin.package_facts:
+
+- name: Ensure docker is installed
+  ansible.builtin.assert:
+    that: "'docker-ce' in ansible_facts.packages"
+    fail_msg: "Please install docker first"
+    quiet: true
+
+- name: Create user for gitea act_runner
+  ansible.builtin.user:
+    name: "{{ gitea_runner_user }}"
+    shell: /sbin/nologin
+    groups: docker
+    append: true
+
+- name: Check if act_runner is installed
+  ansible.builtin.command: act_runner -v
+  register: _act_runner_version
+  changed_when: false
+  ignore_errors: true
+  check_mode: false
+
+- name: Set update_needed to true if act_runner is not installed
+  ansible.builtin.set_fact:
+    update_needed: true
+  when: _act_runner_version.rc != 0
+
+- name: Extract version number from installed version
+  ansible.builtin.set_fact:
+    runner_version_number: "{{ _act_runner_version.stdout.split()[2] | regex_replace('^v', '') }}"
+  when: _act_runner_version.rc == 0
+
+- name: Compare installed version with the latest version
+  ansible.builtin.set_fact:
+    update_needed: "{{ gitea_runner_version is version(runner_version_number | default('0'), '>') }}"
+  when: _act_runner_version.rc == 0
+
+- name: Install/update gitea act_runner
+  ansible.builtin.include_tasks:
+    file: install.yml
+  when: update_needed
+
+- name: Check if runner has been registered yet
+  ansible.builtin.stat:
+    path: "/home/{{ gitea_runner_user }}/.runner"
+  register: stat_result
+
+- name: Run configure task if runner not registered
+  ansible.builtin.include_tasks:
+    file: configure.yml
+  when: not stat_result.stat.exists
+
+- name: Setup systemd service file for act_runner
+  ansible.builtin.include_tasks:
+    file: systemd.yml

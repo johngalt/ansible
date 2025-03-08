@@ -1,0 +1,3 @@
+---
+# renovate: datasource=github-releases packageName=kdave/btrfs-progs versioning=semver-coerced
+btrfs_version: "6.13"

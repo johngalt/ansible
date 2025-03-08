@@ -1,0 +1,3 @@
+---
+# update_kernel_version: "6.12.9"
+update_kernel_reboot: true

@@ -1,0 +1,68 @@
+---
+- name: Register package_facts
+  ansible.builtin.package_facts:
+
+- name: Verify pip is installed
+  ansible.builtin.assert:
+    that: "'python3-pip' in ansible_facts.packages"
+    fail_msg: "pip is required prior to installing"
+    quiet: true
+
+- name: Install qbittorrent-api via pip
+  ansible.builtin.pip:
+    name: qbittorrent-api
+    break_system_packages: true
+    state: present
+
+- name: Create cachemover directory
+  ansible.builtin.file:
+    path: /opt/cachemover
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Get UID for cachemover user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ cachemover_user }}"
+- name: Set  UID variable
+  ansible.builtin.set_fact:
+    cachemover_uid: "{{ getent_passwd[cachemover_user][1] }}"
+- name: Get GID for cachemover user
+  ansible.builtin.getent:
+    database: group
+    key: "{{ cachemover_group }}"
+- name: Set GID variable
+  ansible.builtin.set_fact:
+    cachemover_gid: "{{ getent_group[cachemover_group][1] }}"
+
+- name: Create davocache.py script from template
+  ansible.builtin.template:
+    src: davocache.j2
+    dest: /opt/cachemover/davocache.py
+    owner: root
+    group: root
+    mode: '0744'
+
+- name: Copy qbitmover.py script
+  ansible.builtin.copy:
+    src: qbitmover.py
+    dest: /opt/cachemover/qbitmover.py
+    owner: root
+    group: root
+    mode: '0744'
+
+- name: Create cachemover run script
+  ansible.builtin.copy:
+    dest: /opt/cachemover/cachemover.sh
+    content: |
+      #!/bin/bash
+      /usr/bin/python3 /opt/cachemover/qbitmover.py --host localhost:8082 -u {{ cachemover_qbit_user }} -p {{ cachemover_qbit_pass }} --cache-mount /mnt/cache-disks/cache01/ --days-from 12 --days-to 30
+    owner: root
+    group: root
+    mode: '0744'
+
+- name: Set systemd timer for cachemover
+  ansible.builtin.include_tasks:
+    file: systemd.yml

@@ -1,0 +1,36 @@
+---
+- name: Get any current snapper configs
+  ansible.builtin.command: snapper list-configs
+  register: _snapper_configs
+  changed_when: false
+  ignore_errors: true
+  check_mode: false
+
+- name: Check if snapper config for each data disk is present
+  ansible.builtin.set_fact:
+    _config_exists: "{{ item in _snapper_configs.stdout }}"
+  loop: "{{ snapraid_data_dirs }}"
+  register: _config_list
+
+- name: Determine which configs do not exist
+  ansible.builtin.set_fact:
+    _config_needed: "{{ item.item if not item.ansible_facts._config_exists }}"
+  loop: "{{ _config_list.results }}"
+  register: _config_needed_list
+
+- name: Create any snapper configs that aren't already defined
+  when: _config_needed_list is defined and _config_needed_list.results | length > 0
+  block:
+    - name: Template default snapper config to disable timeline_create option
+      ansible.builtin.lineinfile:
+        path: /usr/share/snapper/config-templates/default
+        regexp: ^TIMELINE_CREATE=
+        line: TIMELINE_CREATE="no"
+    - name: Creating config
+      ansible.builtin.command:
+        cmd: "snapper -c {{ item.item.item | basename }} create-config -t default {{ item.item.item }}"
+      loop: "{{ _config_needed_list.results }}"
+      loop_control:
+        label: "{{ item.item.item }}"
+      when: not item.item.ansible_facts._config_exists
+      changed_when: true

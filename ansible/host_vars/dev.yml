@@ -1,0 +1,27 @@
+---
+deploy_linux_users:
+  - name: "johngalt"
+    groups:
+      - sudo
+    create_home: true
+    authorized_keys:
+      - "{{ personal_ssh_key }}"
+    password: "*"
+  - name: "ansible"
+    groups:
+      - sudo
+    create_home: true
+    password: "*"
+    authorized_keys:
+      - "{{ ansible_ssh_key }}"
+      - "{{ gitea_action_key }}"
+
+deploy_linux_base_apps:
+  - git
+  - htop
+  - tree
+  - python3
+  - python3-pip
+  - screen
+  - btop
+  - rclone

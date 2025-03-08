@@ -1,0 +1,22 @@
+---
+- name: Install systemd service for backrest
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Backrest v{{ backrest_version }}
+      After=network.target
+
+      [Service]
+      Type=simple
+      User={{ backrest_user }}
+      ExecStart=/usr/local/bin/backrest
+      Environment="BACKREST_PORT={{ backrest_host }}:{{ backrest_port }}"
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/backrest.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Enable backrest systemd service

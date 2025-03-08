@@ -1,0 +1,8 @@
+---
+cachemover_healthchecks_url: ""
+
+cachemover_user: "docker"
+cachemover_group: "docker"
+
+cachemover_qbit_user: ""
+cachemover_qbit_pass: ""

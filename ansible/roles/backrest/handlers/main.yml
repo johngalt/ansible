@@ -1,0 +1,14 @@
+---
+- name: Cleanup restic download directory
+  ansible.builtin.file:
+    path: /tmp/restic
+    state: absent
+- name: Cleanup backrest download directory
+  ansible.builtin.file:
+    path: /tmp/backrest
+    state: absent
+- name: Enable backrest systemd service
+  ansible.builtin.systemd:
+    service: backrest
+    state: restarted
+    enabled: true

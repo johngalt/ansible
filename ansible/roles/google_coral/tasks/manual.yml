@@ -1,0 +1,33 @@
+---
+- name: Install TPU driver library
+  ansible.builtin.package:
+    name: libedgetpu1-std
+    state: present
+  notify:
+    - Reboot
+
+- name: Create temporary directory
+  ansible.builtin.file:
+    path: "/tmp/google-coral"
+    owner: root
+    group: root
+    mode: '0644'
+    state: directory
+  register: _temp_path
+
+- name: Copy deb file to target
+  ansible.builtin.copy:
+    src: "{{ google_coral_deb_file }}"
+    dest: "{{ _temp_path.path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: _temp_file
+
+- name: Install deb file
+  ansible.builtin.apt:
+    deb: "{{ _temp_file.dest }}"
+  register: apt_output
+  notify:
+    - Cleanup coral download directory
+    - Reboot

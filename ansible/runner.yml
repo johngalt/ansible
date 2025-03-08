@@ -1,0 +1,11 @@
+---
+- name: Gitea runner VM deployment
+  hosts: runner
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: deploy_linux
+    - role: geerlingguy.docker
+    - role: gitea_runner
+    - role: renovate

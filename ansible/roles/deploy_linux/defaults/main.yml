@@ -1,0 +1,19 @@
+---
+deploy_linux_users:
+  - name: "ansible"
+    groups: # list
+      - sudo
+    create_home: true # optional
+    shell: "/bin/bash" # optional
+    password: "*" # optional
+    authorized_keys: # optional, must be list
+      - "{{ ansible_ssh_key }}"
+
+deploy_linux_deb_backports_enabled: false
+
+deploy_linux_base_apps:
+  - git
+  - htop
+  - tree
+  - python3
+  - python3-pip

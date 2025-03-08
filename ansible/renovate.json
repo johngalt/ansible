@@ -1,0 +1,16 @@
+{
+    "extends": [
+      "config:recommended",
+      ":dependencyDashboard"
+    ],
+    "customManagers": [
+      {
+        "customType": "regex",
+        "fileMatch": ["(^|/)defaults/[^/]+\\.ya?ml$"],
+        "matchStrings": [
+          "# renovate: datasource=(?<datasource>[a-z-]+?)(?: depName=(?<depName>.+?))? packageName=(?<packageName>.+?)(?: versioning=(?<versioning>[a-z-]+?))?\\s.*:\\s\"(?<currentValue>.+?)\""
+        ],
+        "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+      }
+    ]
+}

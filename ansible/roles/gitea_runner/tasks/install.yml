@@ -1,0 +1,17 @@
+---
+- name: Get latest release of act_runner from github
+  ansible.builtin.get_url:
+    url: "https://gitea.com/gitea/act_runner/releases/download/v{{ gitea_runner_version }}/act_runner-{{ gitea_runner_version }}-linux-amd64"
+    dest: "/tmp/act_runner-{{ gitea_runner_version }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: "/tmp/act_runner-{{ gitea_runner_version }}"
+    dest: "/usr/local/bin/act_runner"
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'

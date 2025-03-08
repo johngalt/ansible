@@ -1,0 +1,9 @@
+---
+- name: Development server deployment
+  hosts: dev
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: deploy_linux
+    - role: geerlingguy.docker

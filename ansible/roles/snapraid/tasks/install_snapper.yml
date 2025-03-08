@@ -1,0 +1,47 @@
+---
+- name: Register package facts
+  ansible.builtin.package_facts:
+
+- name: Check if snapper is already installed
+  ansible.builtin.set_fact:
+    snapper_installed: true
+  when: "'snapper' in ansible_facts.packages"
+
+- name: Install snapper from openSUSE repository
+  when: snapper_installed is undefined
+  block:
+    - name: Download openSUSE repository key
+      ansible.builtin.get_url:
+        url: https://download.opensuse.org/repositories/filesystems:snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/Release.key
+        dest: /etc/apt/keyrings/opensuse_snapper.asc
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Add openSUSE snapper repository
+      ansible.builtin.deb822_repository:
+        name: opensuse-snapper
+        types: deb
+        uris: http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/
+        suites: ./
+        signed_by: /etc/apt/keyrings/opensuse_snapper.asc
+
+    - name: Pin openSUSE snapper repo with higher priority
+      ansible.builtin.copy:
+        content: |
+          Package: snapper
+          Pin: origin download.opensuse.org
+          Pin-Priority: 990
+        dest: /etc/apt/preferences.d/90_snapper
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install snapper
+      ansible.builtin.apt:
+        name:
+          - snapper
+          - libsnapper
+        state: present
+        force: true
+        update_cache: true

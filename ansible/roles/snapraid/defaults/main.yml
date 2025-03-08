@@ -1,0 +1,25 @@
+---
+# renovate: datasource=github-releases packageName=amadvance/snapraid versioning=semver-coerced
+snapraid_version: "12.4"
+snapraid_config_path: "/etc/snapraid.conf"
+
+snapraid_data_dirs: []
+snapraid_parity_files: []
+snapraid_content_files: []
+
+# CHANGE THIS
+snapraid_btrfs_runner_repo: "https://github.com/fmoledina/snapraid-btrfs-runner.git"
+snapraid_btrfs_runner_repo_key: ""
+snapraid_btrfs_runner_timer: "*-*-* 06:00:00"
+
+snapraid_btrfs_runner_config:
+  log: "/var/log/snapraid-btrfs-runner.log"
+  cleanup: true
+  email_from: ""
+  email_to: ""
+  smtp_host: "localhost"
+  scrub_enabled: false
+  scrub_plan: 12
+  scrub_older_than: 10
+  delete_threshold: 150
+  touch: false

@@ -1,0 +1,95 @@
+---
+- name: Run asserts
+  ansible.builtin.include_tasks:
+    file: assert.yml
+
+- name: Run user tasks if specific docker user is specified
+  when: manage_docker_user != 'root'
+  block:
+    - name: Create docker user if it doesn't exist
+      ansible.builtin.user:
+        name: "{{ manage_docker_user }}"
+        groups: "{{ manage_docker_group }}"
+        append: "true"
+        create_home: false
+        shell: "/sbin/nologin"
+    - name: Get docker user UID
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ manage_docker_user }}"
+      register: docker_vars_uid
+    - name: Set docker UID variable
+      ansible.builtin.set_fact:
+        manage_docker_env_uid: "{{ getent_passwd[manage_docker_user][1] }}"
+    - name: Get docker group GID
+      ansible.builtin.getent:
+        database: group
+        key: "{{ manage_docker_group }}"
+      register: docker_vars_gid
+    - name: Set docker GID variable
+      ansible.builtin.set_fact:
+        manage_docker_env_gid: "{{ getent_group[manage_docker_group][1] }}"
+
+- name: Ensure main docker configuration directory is present
+  ansible.builtin.file:
+    path: "{{ manage_docker_config_dir }}"
+    owner: "{{ manage_docker_user | default('root', true) }}"
+    group: "{{ manage_docker_group | default('root', true) }}"
+    mode: "{{ manage_docker_config_permissions }}"
+    state: directory
+
+- name: Setup networks if defined
+  ansible.builtin.include_tasks:
+    file: networks.yml
+  when: manage_docker_networks is defined
+
+- name: Checking out latest git repository # noqa: latest
+  ansible.builtin.git:
+    repo: "{{ manage_docker_compose_repo }}"
+    dest: "{{ manage_docker_compose_storage }}"
+    key_file: "{{ manage_docker_git_key | default(omit, true) }}"
+  connection: local
+  run_once: true # Only run once if calling role for multiple hosts
+  become: false
+  check_mode: false
+
+- name: Find each compose file in repository for {{ inventory_hostname }}
+  ansible.builtin.find:
+    paths: "{{ manage_docker_compose_storage }}/{{ inventory_hostname }}"
+    file_type: file
+    pattern: "*.yaml"
+  connection: local
+  register: docker_compose_files
+
+- name: Load docker secrets file
+  ansible.builtin.set_fact:
+    secrets_file: "{{ lookup('ansible.builtin.unvault', manage_docker_secrets_file) | from_yaml }}"
+
+- name: Load common env variables from secrets file
+  ansible.builtin.set_fact:
+    stack_common_vars: "{{ secrets_file['common'] | default({}) }}"
+
+- name: Create empty list to populate changed stacks to deploy
+  ansible.builtin.set_fact:
+    deploy_stacks: []
+
+- name: Loop through repo and update docker_compose and env files on host
+  ansible.builtin.include_tasks:
+    file: update_configs.yml
+  loop: "{{ docker_compose_files.files }}"
+  loop_control:
+    loop_var: docker_compose_stack_file
+    label: "{{ docker_compose_stack_file.path }}"
+  when: docker_compose_files.files | length > 0
+
+- name: Deploy stacks with updated/changed configs or env vars
+  ansible.builtin.include_tasks:
+    file: deploy_stack.yml
+  loop: "{{ deploy_stacks }}"
+  loop_control:
+    loop_var: deploy_stack_name
+  when: deploy_stacks is iterable
+
+- name: Cleanup ...
+  ansible.builtin.include_tasks:
+    file: cleanup.yml

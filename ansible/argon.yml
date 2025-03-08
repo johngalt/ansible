@@ -1,0 +1,50 @@
+---
+- name: Argon server deployment
+  hosts: mediaservers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Copy SSH keys
+      ansible.builtin.copy:
+        src: "~/.ssh/gitea_deploy"
+        dest: "/home/ansible/.ssh/gitea_deploy"
+        owner: ansible
+        group: ansible
+        mode: "0600"
+
+  roles:
+    - role: deploy_linux
+      tags: deploy_linux
+    - role: create_mountdirs
+      tags: mountdirs
+    - role: update_kernel
+      tags: kernel
+    - role: i915_sriov
+      tags: i915
+    - role: google_coral
+      tags: coral
+    - role: zfs
+      tags: zfs
+    - role: btrfs
+      tags: btrfs
+    - role: fstab
+      tags: fstab
+    - role: snapraid
+      tags: snapraid
+    - role: geerlingguy.docker
+      tags: docker
+    - role: tigattack.mergerfs
+      tags: mergerfs
+    - role: stefangweichinger.ansible_rclone
+      tags: rclone
+    - role: geerlingguy.nfs
+      tags: nfs
+    - role: cachemover
+      tags: cachemover
+    - role: geerlingguy.sanoid
+      tags: sanoid
+    - role: backrest
+      tags: backrest
+    - role: manage_docker
+      tags: manage_docker

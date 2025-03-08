@@ -1,0 +1,24 @@
+---
+- name: Create groups
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ deploy_linux_users | map(attribute='groups') | flatten | unique }}"
+
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups | default(omit) }}"
+    append: "true"
+    create_home: "{{ item.create_home | default(true) }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    password: "{{ item.password | default(omit) }}"
+  loop: "{{ deploy_linux_users }}"
+
+- name: Add authorized keys
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.authorized_keys | join('\n') }}"
+    state: present
+  loop: "{{ deploy_linux_users }}"
+  when: item.authorized_keys is defined

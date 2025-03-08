@@ -1,0 +1,47 @@
+---
+- name: Check if backrest systemd service exists
+  ansible.builtin.slurp:
+    path: /etc/systemd/system/backrest.service
+  register: _backrest_systemd
+  ignore_errors: true
+
+- name: Get installed backrest version from systemd service file
+  ansible.builtin.set_fact:
+    backrest_installed_version: "{{ _backrest_systemd.content | b64decode | regex_findall('Backrest v(\\d+\\.\\d+\\.\\d+)') | first }}"
+  when: _backrest_systemd.content is defined
+
+- name: Install backrest
+  when: backrest_version is version(backrest_installed_version | default("0"), '>')
+  notify:
+    - Cleanup backrest download directory
+  block:
+    - name: Stop backrest systemd service if its running
+      ansible.builtin.systemd:
+        service: backrest
+        state: stopped
+      ignore_errors: true
+    - name: Create temporary directory
+      ansible.builtin.file:
+        path: /tmp/backrest/
+        state: directory
+        owner: root
+        group: root
+        mode: "0744"
+    - name: Download/unpack backrest from GitHub
+      ansible.builtin.unarchive:
+        src: "https://github.com/garethgeorge/backrest/releases/download/v{{ backrest_version }}/backrest_Linux_x86_64.tar.gz"
+        dest: "/tmp/backrest"
+        owner: root
+        group: root
+        remote_src: true
+    - name: Copy backrest binary to /usr/local/bin
+      ansible.builtin.command:
+        cmd: cp backrest /usr/local/bin
+        chdir: /tmp/backrest/
+    - name: Ensure binary is executable
+      ansible.builtin.file:
+        path: /usr/local/bin/backrest
+        mode: +x
+    - name: Create/start systemd service
+      ansible.builtin.include_tasks:
+        file: systemd.yml

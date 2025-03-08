@@ -1,0 +1,15 @@
+---
+- name: Cleanup snapraid download directory
+  ansible.builtin.file:
+    path: "/tmp/snapraid-{{ snapraid_version }}"
+    state: absent
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable snapraid-btrfs-runner timer
+  ansible.builtin.systemd:
+    name: snapraid-btrfs-runner.timer
+    state: started
+    enabled: true

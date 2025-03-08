@@ -1,0 +1,12 @@
+---
+- name: Check docker version
+  ansible.builtin.command: docker --version
+  register: docker_valid
+  ignore_errors: true
+  changed_when: false
+
+- name: Assert that docker is installed before continuing role
+  ansible.builtin.assert:
+    that: not docker_valid.failed
+    fail_msg: "Please install docker on target host"
+    quiet: true

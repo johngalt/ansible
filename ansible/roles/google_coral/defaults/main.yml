@@ -1,0 +1,4 @@
+---
+google_coral_user: "docker"
+google_coral_reboot: true
+google_coral_deb_file: "gasket-dkms_1.0-18_all.deb"

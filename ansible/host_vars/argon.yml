@@ -1,0 +1,167 @@
+---
+deploy_linux_users:
+  - name: "johngalt"
+    groups:
+      - sudo
+      - docker
+    create_home: true
+    password: "*"
+    authorized_keys:
+      - "{{ personal_ssh_key }}"
+  - name: "docker"
+    groups:
+      - docker
+    create_home: false
+    shell: /sbin/nologin
+  - name: "ansible"
+    groups:
+      - sudo
+    create_home: true
+    password: "*"
+    authorized_keys:
+      - "{{ ansible_ssh_key }}"
+      - "{{ gitea_action_key }}"
+
+deploy_linux_deb_backports_enabled: true
+
+create_mountdirs_paths:
+  - "/mnt/backups"
+  - "/mnt/cache-disks"
+  - "/mnt/cache-disks/cache01"
+  - "/mnt/data-disks"
+  - "/mnt/data-disks/data01"
+  - "/mnt/data-disks/data02"
+  - "/mnt/data-disks/data03"
+  - "/mnt/frigate"
+  - "/mnt/recordings"
+  - "/mnt/parity-disks"
+  - "/mnt/parity-disks/parity01"
+  - "/mnt/snapraid-content"
+  - "/mnt/snapraid-content/disk01"
+  - "/mnt/snapraid-content/disk02"
+  - "/mnt/snapraid-content/disk03"
+  - "/mnt/vault"
+  - "/mnt/vault-cold"
+
+fstab_mounts:
+  - uuid: fe72168d-41a8-42aa-a14f-623eaacf1e57
+    path: /mnt/backups
+    fs: ext4
+    options: defaults
+  - uuid: b01e7699-ce52-4712-8a53-2d9d9f0194ef
+    path: /mnt/frigate
+    fs: ext4
+    options: defaults
+  - uuid: 1886a1de-a2ae-4ca7-889b-ff7160fae9d3
+    path: /mnt/recordings
+    fs: ext4
+    options: defaults
+  - uuid: 2bad7281-b435-4127-8702-300951adcb6a
+    path: /mnt/data-disks/data01
+    fs: btrfs
+    options: subvol=/data
+  - uuid: a737c66a-0c9a-4dfa-ba46-507dc742efbc
+    path: /mnt/data-disks/data02
+    fs: btrfs
+    options: subvol=/data
+  - uuid: 80b08aac-7aea-4d93-92db-295595732ece
+    path: /mnt/data-disks/data03
+    fs: btrfs
+    options: subvol=/data
+  - uuid: 2bad7281-b435-4127-8702-300951adcb6a
+    path: /mnt/snapraid-content/disk01
+    fs: btrfs
+    options: subvol=/content
+  - uuid: a737c66a-0c9a-4dfa-ba46-507dc742efbc
+    path: /mnt/snapraid-content/disk02
+    fs: btrfs
+    options: subvol=/content
+  - uuid: 80b08aac-7aea-4d93-92db-295595732ece
+    path: /mnt/snapraid-content/disk03
+    fs: btrfs
+    options: subvol=/content
+  - uuid: 3629eee0-f40b-4549-8dbc-ed237c183e06
+    path: /mnt/parity-disks/parity01
+    fs: btrfs
+    options: defaults
+  - uuid: 24b2e8f6-292c-4790-b8b3-18462b7bb857
+    path: /mnt/cache-disks/cache01
+    fs: ext4
+    options: defaults
+
+snapraid_data_dirs:
+  - /mnt/data-disks/data01
+  - /mnt/data-disks/data02
+  - /mnt/data-disks/data03
+snapraid_parity_files:
+  - /mnt/parity-disks/parity01/snapraid.parity
+snapraid_content_files:
+  - /var/snapraid/snapraid.content
+  - /mnt/snapraid-content/disk01/snapraid.content
+  - /mnt/snapraid-content/disk02/snapraid.content
+snapraid_btrfs_runner_repo: "git@gitea.{{ domain_url }}:johngalt/snapraid-btrfs-runner.git"
+snapraid_btrfs_runner_repo_key: "{{ gitea_deploy_keyfile }}"
+snapraid_btrfs_runner_config:
+  log: "/var/log/snapraid-btrfs-runner.log"
+  cleanup: true
+  email_from: "snapraid@argon.local"
+  email_to: "snapraid@mailrise.xyz"
+  smtp_host: "localhost"
+  scrub_enabled: false
+  scrub_plan: 12
+  scrub_older_than: 10
+  delete_threshold: 150
+  touch: false
+
+mergerfs_mounts:
+  - path: /mnt/vault
+    branches:
+      - /mnt/cache-disks/cache01
+      - /mnt/data-disks/data*
+    options: defaults,nonempty,allow_other,cache.files=off,moveonenospc=true,category.create=ff,dropcacheonclose=false,minfreespace=200G,fsname=vault
+  - path: /mnt/vault-cold
+    branches:
+      - /mnt/data-disks/data*
+    options: defaults,nonempty,allow_other,cache.files=off,moveonenospc=true,category.create=epmfs,dropcacheonclose=false,minfreespace=200G,fsname=vault-cold
+
+nfs_exports: ["/mnt/vault/media 192.168.1.181(rw,async,no_subtree_check,fsid=0)"]
+
+cachemover_healthchecks_url: "https://healthchecks.{{ domain_url }}/ping/628b7d91-9767-4ba2-9021-2893105e07f4"
+cachemover_qbit_user: "johngalt"
+cachemover_qbit_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          34363366356462366362616239636264363366353863663039386235306231656465633537386336
+          3961396162323937383138616261333537346264383932310a396330333363666666646430656464
+          38623163636663363239646662623765306534653861393833336338303865353439353235303635
+          6235396238363638660a663434663236343634386232383239356338396339333136393763623039
+          3932
+
+sanoid_conf: >
+  # Backups
+
+  [tank/container-configs]
+          use_template = backup
+  [tank/databases]
+          use_template = backup
+  [tank/immich-media]
+          use_template = backup
+  [tank/paperless-data]
+          use_template = backup
+  [tank/johngalt-drive]
+          use_template = backup
+  [tank/posters]
+          use_template = backup
+
+  # Templates
+
+  [template_backup]
+          hourly = 4
+          daily = 2
+          weekly = 2
+          monthly = 2
+          yearly = 0
+          autosnap = yes
+          autoprune = yes
+
+manage_docker_config_dir: "/opt/docker"
+manage_docker_secrets_file: "./docker_vars/argon.yml"

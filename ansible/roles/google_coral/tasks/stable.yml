@@ -1,0 +1,9 @@
+---
+- name: Install TPU driver package
+  ansible.builtin.package:
+    name:
+      - gasket-dkms
+      - libedgetpu1-std
+    state: present
+  notify:
+    - Reboot

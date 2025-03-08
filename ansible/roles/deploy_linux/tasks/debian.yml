@@ -1,0 +1,24 @@
+---
+- name: Enable unattended updates in Debian
+  ansible.builtin.apt:
+    name: ['unattended-upgrades', 'apt-listchanges']
+    state: present
+
+- name: Enable backports repository
+  ansible.builtin.deb822_repository:
+    name: debian-backports
+    enabled: true
+    signed_by: "/usr/share/keyrings/debian-archive-keyring.gpg"
+    types: deb
+    uris: http://deb.debian.org/debian
+    suites: "{{ ansible_distribution_release }}-backports"
+    components:
+      - main
+      - contrib
+      - non-free
+  when: deploy_linux_deb_backports_enabled
+
+- name: Install base packages via apt
+  ansible.builtin.apt:
+    name: "{{ deploy_linux_base_apps | default([]) }}"
+    state: present

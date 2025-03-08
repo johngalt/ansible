@@ -1,0 +1,10 @@
+---
+- name: Edit fstab and create mountpoints
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: "UUID={{ item.uuid }}"
+    fstype: "{{ item.fs }}"
+    opts: "{{ item.options }}"
+    state: "mounted"
+  loop: "{{ fstab_mounts }}"
+  notify: Reload systemd

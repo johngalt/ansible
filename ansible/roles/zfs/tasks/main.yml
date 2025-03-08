@@ -1,0 +1,23 @@
+---
+- name: Pin zfs-linux source packages to use backports repo
+  ansible.builtin.copy:
+    dest: "/etc/apt/preferences.d/90_zfs"
+    content: |
+      Package: src:zfs-linux
+      Pin: release n={{ ansible_distribution_release }}-backports
+      Pin-Priority: 990
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install ZFS from backports
+  ansible.builtin.apt:
+    update_cache: true
+    pkg:
+      - "zfsutils-linux"
+      - "zfs-dkms"
+    state: present

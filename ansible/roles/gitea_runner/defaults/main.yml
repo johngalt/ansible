@@ -1,0 +1,7 @@
+---
+# renovate: datasource=gitea-releases packageName=gitea/act_runner versioning=semver-coerced
+gitea_runner_version: "0.2.11"
+gitea_runner_user: "runner"
+
+gitea_runner_instance: ""
+gitea_runner_token: ""

@@ -1,0 +1,10 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable cachemover timer
+  ansible.builtin.systemd:
+    name: cachemover.timer
+    state: started
+    enabled: true

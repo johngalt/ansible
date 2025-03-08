@@ -1,0 +1,24 @@
+---
+- name: Install snapraid
+  ansible.builtin.include_tasks:
+    file: install_snapraid.yml
+
+- name: Configure snapraid
+  ansible.builtin.include_tasks:
+    file: configure_snapraid.yml
+
+- name: Install snapper
+  ansible.builtin.include_tasks:
+    file: install_snapper.yml
+
+- name: Install snapraid-btrfs
+  ansible.builtin.include_tasks:
+    file: install_snapraid-btrfs.yml
+
+- name: Configure snapper
+  ansible.builtin.include_tasks:
+    file: configure_snapper.yml
+
+- name: Install snapraid-btrfs-runner
+  ansible.builtin.include_tasks:
+    file: install_snapraid-btrfs-runner.yml

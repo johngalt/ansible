@@ -1,0 +1,7 @@
+---
+- name: Create directories for mount points
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0755"
+    state: directory
+  loop: "{{ create_mountdirs_paths }}"

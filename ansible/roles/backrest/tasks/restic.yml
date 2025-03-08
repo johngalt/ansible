@@ -1,0 +1,48 @@
+---
+- name: Get current restic version
+  ansible.builtin.command:
+    cmd: restic version
+  register: _restic_version_output
+  changed_when: false
+  ignore_errors: true
+  check_mode: false
+
+- name: Set current restic version variable
+  ansible.builtin.set_fact:
+    restic_installed_version: "{{ _restic_version_output.stdout.split()[1] }}"
+  when: _restic_version_output.rc == 0
+
+- name: Mark restic for install if not installed
+  ansible.builtin.set_fact:
+    restic_update_needed: true
+  when: _restic_version_output.rc != 0
+
+- name: Mark restic for update if newer version is set
+  ansible.builtin.set_fact:
+    restic_update_needed: true
+  when: backrest_restic_version is version(restic_installed_version|default("0"), '>')
+
+- name: Install restic
+  when: restic_update_needed is defined
+  notify: Cleanup restic download directory
+  block:
+    - name: Create temporary download directory
+      ansible.builtin.file:
+        path: /tmp/restic/
+        state: directory
+        owner: root
+        group: root
+        mode: "0744"
+    - name: Download restic
+      ansible.builtin.get_url:
+        url: "https://github.com/restic/restic/releases/download/v{{ backrest_restic_version }}/restic_{{ backrest_restic_version }}_linux_amd64.bz2"
+        dest: "/tmp/restic"
+        force: true
+        owner: root
+        group: root
+        mode: +x
+    - name: Set file name
+      ansible.builtin.set_fact:
+        restic_file_name: "restic_{{ backrest_restic_version }}_linux_amd64.bz2"
+    - name: Unzip and move binary to /usr/local/bin
+      ansible.builtin.shell: "cd /tmp/restic && bzip2 -d {{ restic_file_name }} && cp {{ restic_file_name | regex_replace('.bz2') }} /usr/local/bin/restic"

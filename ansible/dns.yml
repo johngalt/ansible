@@ -1,0 +1,11 @@
+---
+- name: DNS Server deployment
+  hosts: dns
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: deploy_linux
+    - role: geerlingguy.docker
+    - role: manage_docker
+      tags: manage_docker

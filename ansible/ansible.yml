@@ -1,0 +1,8 @@
+---
+- name: Ansible control node deployment
+  hosts: ansible
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: deploy_linux

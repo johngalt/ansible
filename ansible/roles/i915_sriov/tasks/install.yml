@@ -1,0 +1,38 @@
+---
+- name: Installing dependencies for i915-sriov dkms module
+  ansible.builtin.apt:
+    name: ['build-essential', 'dkms', 'linux-headers-amd64']
+    state: present
+    update_cache: true
+
+- name: Create temporary directory
+  ansible.builtin.file:
+    path: "/tmp/i915-sriov"
+    owner: root
+    group: root
+    mode: '0644'
+    state: directory
+  register: _temp_path
+
+- name: Download module deb from github
+  ansible.builtin.get_url:
+    url: "https://github.com/strongtz/i915-sriov-dkms/releases/download/{{ i915_sriov_version }}/i915-sriov-dkms_{{ i915_sriov_version }}_amd64.deb"
+    dest: "{{ _temp_path.path }}"
+    mode: '0644'
+  register: _temp_file
+
+- name: Install i915 module deb
+  ansible.builtin.apt:
+    deb: "{{ _temp_file.dest }}"
+  notify:
+    - Cleanup i915 download directory
+    - Reboot
+
+- name: Update grub config
+  ansible.builtin.lineinfile:
+    path: "/etc/default/grub"
+    regexp: "^GRUB_CMDLINE_LINUX_DEFAULT"
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="intel_iommu=on i915.enable_guc=3 module_blacklist=xe"'
+  notify:
+    - Update grub
+    - Update initramfs

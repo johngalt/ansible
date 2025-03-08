@@ -1,0 +1,24 @@
+---
+deploy_linux_users:
+  - name: "johngalt"
+    groups:
+      - sudo
+    create_home: true
+    authorized_keys:
+      - "{{ personal_ssh_key }}"
+    password: "*"
+  - name: "ansible"
+    groups:
+      - sudo
+    create_home: true
+    password: "*"
+    authorized_keys:
+      - "{{ ansible_ssh_key }}"
+      - "{{ gitea_action_key }}"
+
+deploy_linux_base_apps: []
+
+manage_docker_config_dir: "/opt/docker"
+manage_docker_user: "root"
+manage_docker_group: "root"
+manage_docker_secrets_file: "./docker_vars/dns.yml"

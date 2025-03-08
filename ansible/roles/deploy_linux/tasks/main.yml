@@ -1,0 +1,31 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check if sudo is installed
+  ansible.builtin.assert:
+    that: "'sudo' in ansible_facts.packages"
+    fail_msg: "Please ensure sudo is installed!"
+    quiet: true
+
+- name: Enable passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: ^%sudo
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: visudo -cf %s
+
+- name: Create users
+  ansible.builtin.include_tasks:
+    file: users.yml
+
+- name: Configure sshd
+  ansible.builtin.include_tasks:
+    file: sshd.yml
+
+- name: Include Debian-specific tasks
+  ansible.builtin.include_tasks:
+    file: debian.yml
+  when: ansible_os_family == "Debian"

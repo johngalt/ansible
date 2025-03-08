@@ -1,0 +1,3 @@
+---
+create_mountdirs_paths:
+  - "/mnt"

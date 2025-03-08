@@ -1,0 +1,24 @@
+---
+deploy_linux_users:
+  - name: "ansible"
+    groups:
+      - sudo
+      - docker
+    create_home: true
+    authorized_keys:
+      - "{{ gitea_action_key }}" # gitea_action key
+      - "{{ personal_ssh_key }}"
+    password: "*"
+  - name: "docker"
+    groups:
+      - docker
+    create_home: false
+    shell: /sbin/nologin
+
+deploy_linux_base_apps:
+  - git
+  - htop
+  - tree
+  - python3
+  - python3-pip
+  - pipx
